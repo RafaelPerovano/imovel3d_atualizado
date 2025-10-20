@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
+import 'package:mqtt_client/mqtt_client.dart';
+import 'package:mqtt_client/mqtt_server_client.dart';
 import 'configuracoes_page.dart';
 import 'relatorios_page.dart';
-import 'bluetooth_page.dart';
 
 class HomePage extends StatefulWidget {
   final bool temaEscuro;
@@ -30,30 +30,68 @@ class _HomePageState extends State<HomePage> {
   double temperatura = 0;
   double umidade = 0;
 
-  void atualizarValores() {
-    setState(() {
-      temperatura = 20 + Random().nextDouble() * 10;
-      umidade = 40 + Random().nextDouble() * 30;
-    });
-  }
+  late MqttServerClient client;
 
   @override
   void initState() {
     super.initState();
-    atualizarValores();
+    _connectMQTT();
+  }
+
+  Future<void> _connectMQTT() async {
+    client = MqttServerClient('127.0.0.1', 'flutterClient'); // localhost
+    client.logging(on: true);
+    client.keepAlivePeriod = 20;
+
+    client.onConnected = () => print('Conectado ao broker MQTT');
+    client.onDisconnected = () => print('Desconectado do broker MQTT');
+
+    try {
+      await client.connect();
+    } catch (e) {
+      print('Erro ao conectar: $e');
+      client.disconnect();
+      return;
+    }
+
+    // Inscrever nos tópicos de temperatura e umidade
+    client.subscribe('sensor/temperatura', MqttQos.atMostOnce);
+    client.subscribe('sensor/umidade', MqttQos.atMostOnce);
+
+    // Receber mensagens
+    client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+      final recMess = c[0].payload as MqttPublishMessage;
+      final message =
+          MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+
+      setState(() {
+        if (c[0].topic == 'sensor/temperatura') {
+          temperatura = double.tryParse(message) ?? temperatura;
+        } else if (c[0].topic == 'sensor/umidade') {
+          umidade = double.tryParse(message) ?? umidade;
+        }
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Clima3D"), centerTitle: true, backgroundColor: Colors.blue),
+      appBar: AppBar(
+        title: const Text("Clima3D"),
+        centerTitle: true,
+        backgroundColor: Colors.blue,
+      ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(color: Colors.blue),
-              child: Text("Clima3D Menu", style: TextStyle(color: Colors.white, fontSize: 20)),
+              child: Text(
+                "Clima3D Menu",
+                style: TextStyle(color: Colors.white, fontSize: 20),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.home),
@@ -65,9 +103,9 @@ class _HomePageState extends State<HomePage> {
               title: const Text("Relatórios"),
               onTap: () {
                 Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const RelatoriosPage()),
-                );
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const RelatoriosPage()));
               },
             ),
             ListTile(
@@ -89,25 +127,6 @@ class _HomePageState extends State<HomePage> {
                 );
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.bluetooth),
-              title: const Text("Bluetooth"),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => BluetoothPage(
-                      onDataReceived: (novaTemp, novaUmidade) {
-                        setState(() {
-                          temperatura = novaTemp;
-                          umidade = novaUmidade;
-                        });
-                      },
-                    ),
-                  ),
-                );
-              },
-            ),
           ],
         ),
       ),
@@ -121,14 +140,16 @@ class _HomePageState extends State<HomePage> {
             Icon(widget.iconeTemp, size: widget.tamanhoIcone, color: Colors.red),
             Text(
               "${temperatura.toStringAsFixed(1)} °C",
-              style: TextStyle(fontSize: widget.tamanhoFonte, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontSize: widget.tamanhoFonte, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 40),
             Icon(widget.iconeUmidade, size: widget.tamanhoIcone, color: Colors.blue),
             Text(
               "${umidade.toStringAsFixed(1)} %",
-              style: TextStyle(fontSize: widget.tamanhoFonte, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontSize: widget.tamanhoFonte, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
           ],
