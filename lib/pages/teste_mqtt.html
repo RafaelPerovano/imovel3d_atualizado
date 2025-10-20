@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Teste MQTT WebSocket</title>
+</head>
+<body>
+  <h2>Teste MQTT com Mosquitto</h2>
+
+  <!-- Biblioteca Paho MQTT (versão 1.0.3 funciona 100%) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.3/mqttws31.min.js"></script>
+
+  <script>
+    const clientId = "webClient_" + Math.random().toString(16).substr(2, 8);
+    const client = new Paho.MQTT.Client("127.0.0.1", Number(9001), clientId);
+
+    client.onConnectionLost = (resp) => console.log("❌ Conexão perdida:", resp.errorMessage);
+    client.onMessageArrived = (msg) => console.log("📩 Mensagem recebida:", msg.payloadString);
+
+    client.connect({
+      onSuccess: () => {
+        console.log("✅ Conectado ao broker via WebSocket!");
+        client.subscribe("sensor/temperatura");
+      },
+      onFailure: (err) => console.log("⚠️ Falha ao conectar:", err.errorMessage)
+    });
+  </script>
+</body>
+</html>

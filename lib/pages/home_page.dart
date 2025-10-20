@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
@@ -39,10 +40,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _connectMQTT() async {
-    client = MqttServerClient('127.0.0.1', 'flutterClient'); // localhost
+    final brokerIP = '10.102.60.76'; // IP do PC com Mosquitto
+
+    if (kIsWeb) {
+      // Web -> WebSockets
+      client = MqttServerClient.withPort(brokerIP, 'flutter_web_client', 9001);
+      client.useWebSocket = true;
+    } else {
+      // Windows / Desktop -> TCP direto
+      client = MqttServerClient(brokerIP, 'flutter_client');
+    }
+
     client.logging(on: true);
     client.keepAlivePeriod = 20;
-
     client.onConnected = () => print('Conectado ao broker MQTT');
     client.onDisconnected = () => print('Desconectado do broker MQTT');
 
