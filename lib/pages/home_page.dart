@@ -4,6 +4,7 @@ import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'configuracoes_page.dart';
 import 'relatorios_page.dart';
+import 'dart:io';
 
 class HomePage extends StatefulWidget {
   final bool temaEscuro;
@@ -40,7 +41,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _connectMQTT() async {
-    final brokerIP = '10.102.60.76'; // IP do PC com Mosquitto
+    final brokerIP = InternetAddress.loopbackIPv4.address; // 127.0.0.1
 
     if (kIsWeb) {
       // Web -> WebSockets
