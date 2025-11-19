@@ -41,7 +41,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _connectMQTT() async {
-    final brokerIP = InternetAddress.loopbackIPv4.address; // 127.0.0.1
+    final brokerIP = "192.168.76.104";//InternetAddress.loopbackIPv4.address; // 127.0.0.1
 
     if (kIsWeb) {
       // Web -> WebSockets

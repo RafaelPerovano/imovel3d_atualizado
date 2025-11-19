@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../pages/bluetooth_page.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -35,7 +34,7 @@ class AppDrawer extends StatelessWidget {
               Navigator.pushReplacementNamed(context, '/relatorio');
             },
           ),
-          ListTile(
+          /*ListTile(
             leading: const Icon(Icons.bluetooth),
             title: const Text("Bluetooth"),
             onTap: () {
@@ -51,7 +50,7 @@ class AppDrawer extends StatelessWidget {
                 ),
               );
             },
-          ),
+          ),*/
         ],
       ),
     );
