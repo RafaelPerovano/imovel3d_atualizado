@@ -41,22 +41,22 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _connectMQTT() async {
-    final brokerIP = "192.168.76.104";//InternetAddress.loopbackIPv4.address; // 127.0.0.1
-
+    final brokerIP = "192.168.76.104"; // IP do Mosquitto na rede do hotspot
+  
     if (kIsWeb) {
-      // Web -> WebSockets
+      // WEB → usa WebSocket obrigatoriamente
       client = MqttServerClient.withPort(brokerIP, 'flutter_web_client', 9001);
       client.useWebSocket = true;
     } else {
-      // Windows / Desktop -> TCP direto
-      client = MqttServerClient(brokerIP, 'flutter_client');
+      // ANDROID / WINDOWS / DESKTOP → usa TCP normal na porta 1883
+      client = MqttServerClient.withPort(brokerIP, 'flutter_client', 1883);
     }
-
+  
     client.logging(on: true);
     client.keepAlivePeriod = 20;
     client.onConnected = () => print('Conectado ao broker MQTT');
     client.onDisconnected = () => print('Desconectado do broker MQTT');
-
+  
     try {
       await client.connect();
     } catch (e) {
@@ -64,17 +64,17 @@ class _HomePageState extends State<HomePage> {
       client.disconnect();
       return;
     }
-
-    // Inscrever nos tópicos de temperatura e umidade
+  
+    // Inscrição nos tópicos
     client.subscribe('sensor/temperatura', MqttQos.atMostOnce);
     client.subscribe('sensor/umidade', MqttQos.atMostOnce);
-
-    // Receber mensagens
+  
+    // Listener de mensagens
     client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
       final recMess = c[0].payload as MqttPublishMessage;
       final message =
           MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
-
+  
       setState(() {
         if (c[0].topic == 'sensor/temperatura') {
           temperatura = double.tryParse(message) ?? temperatura;
@@ -84,6 +84,7 @@ class _HomePageState extends State<HomePage> {
       });
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
